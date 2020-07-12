@@ -2,8 +2,9 @@ package com.yinlei.appupdater.updater.bean
 
 import org.json.JSONException
 import org.json.JSONObject
+import java.io.Serializable
 
-data class DownloadBean(val title: String, val content: String, val url: String,val md5: String, val versionCode: String ){
+data class DownloadBean(val title: String, val content: String, val url: String,val md5: String, val versionCode: String ): Serializable{
 
     companion object {
         fun parse(response: String): DownloadBean? {

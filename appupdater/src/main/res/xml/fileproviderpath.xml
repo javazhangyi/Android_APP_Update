@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+<!--    file path传递给别人不安全，所以需要转换为content uri系统希望 name可以随便写-->
+    <root-path name="root" path=".">
+    </root-path>
+
+    <files-path
+        name="files"
+        path=".">
+    </files-path>
+
+    <cache-path
+        name="cache"
+        path=".">
+    </cache-path>
+
+    <external-path
+        name="external"
+        path=".">
+    </external-path>
+
+    <external-cache-path
+        name="external_cache"
+        path=".">
+    </external-cache-path>
+
+    <external-files-path
+        name="external_file"
+        path=".">
+    </external-files-path>
+</paths>

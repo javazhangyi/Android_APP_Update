@@ -8,6 +8,8 @@ import com.yinlei.appupdater.updater.AppUpdater
 import com.yinlei.appupdater.updater.bean.DownloadBean
 import com.yinlei.appupdater.updater.network.INetCallback
 import com.yinlei.appupdater.updater.network.INetDownloadCallback
+import com.yinlei.appupdater.updater.ui.UpdateVersionShowDialog
+import com.yinlei.appupdater.updater.utils.AppUtils
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
@@ -25,38 +27,27 @@ class MainActivity : AppCompatActivity() {
                     // 解析json
                     val bean = DownloadBean.parse(response)
                     // 版本匹配
+                    val versionCode = bean?.versionCode?.toLong()
+                    if (versionCode!! <= AppUtils.getLocalVersionCode(this@MainActivity)) {
+                        Toast.makeText(this@MainActivity, "当前app已经是最新版本,不需要更新!", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+
                     //如果需要更新
                     // 弹框
-                    // 点击下载
-                    val targetFile = File(cacheDir, "target.apk")
-                    bean?.url?.let { url ->
-                        AppUpdater.getInstance().getNetManager().download(
-                            url, targetFile,
-                            object : INetDownloadCallback {
-                                override fun success(apkFile: File) {
-                                    // 安装apk
-                                    Log.d(TAG, "success = ${apkFile.absolutePath}")
-
-                                }
-
-                                override fun progress(progress: Int) {
-                                    // 更新ui界面
-                                    Log.d(TAG, "progress = $progress")
-                                }
-
-                                override fun failed(throwable: Throwable) {
-                                    // 下载失败
-                                    Toast.makeText(this@MainActivity, "文件下载失败!", Toast.LENGTH_SHORT).show()
-                                }
-                            } )
-                    }
+                    UpdateVersionShowDialog.show(this@MainActivity, bean)
                 }
 
                 override fun failed(throwable: Throwable) {
                     throwable.printStackTrace()
                     Toast.makeText(this@MainActivity, "版本更新接口请求失败!", Toast.LENGTH_SHORT).show()
                 }
-            })
+            }, this@MainActivity)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AppUpdater.getInstance().getNetManager().cancel(this@MainActivity)
     }
 }

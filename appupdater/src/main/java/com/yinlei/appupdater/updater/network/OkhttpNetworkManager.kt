@@ -18,9 +18,9 @@ class OkhttpNetworkManager: INetManager {
         val sHandler = Handler(Looper.getMainLooper())
     }
 
-    override fun get(url: String, callback: INetCallback) {
+    override fun get(url: String, callback: INetCallback, tag: Any) {
         val builder = Request.Builder()
-        val request = builder.url(url).get().build()
+        val request = builder.url(url).get().tag(tag).build()
         val call = sOkHttpClient.newCall(request)
 //        call.execute()
         call.enqueue(object : Callback {
@@ -45,12 +45,17 @@ class OkhttpNetworkManager: INetManager {
         })
     }
 
-    override fun download(url: String, targetFile: File?, callback: INetDownloadCallback) {
+    override fun download(
+        url: String,
+        targetFile: File?,
+        callback: INetDownloadCallback,
+        tag: Any
+    ) {
         if(!targetFile!!.exists()){
             targetFile.parentFile.mkdirs()
         }
         val builder = Request.Builder()
-        val request = builder.url(url).get().build()
+        val request = builder.url(url).get().tag(tag).build()
         val call = sOkHttpClient.newCall(request)
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -67,7 +72,7 @@ class OkhttpNetworkManager: INetManager {
                     var bufferLen = 0
                     while (((istr?.read(buffer)).also {
                             bufferLen = it!!
-                        }) != -1){
+                        }) != -1 && !call.isCanceled()){
                         os.write(buffer, 0, bufferLen)
                         os.flush()
                         curLen += bufferLen
@@ -75,6 +80,11 @@ class OkhttpNetworkManager: INetManager {
                             callback.progress((curLen * 1.0f / totalLen!! * 100).toInt())
                         }
                     }
+
+                    if (call.isCanceled()) {
+                        return
+                    }
+
                     //我的文件需要暴露给系统安装器。属于2个不同的进程，所以有权限上的问题
                     try {
                         targetFile.setExecutable(true, false)// 不仅仅是拥有该文件者可以执行
@@ -87,6 +97,9 @@ class OkhttpNetworkManager: INetManager {
                         callback.success(targetFile!!)
                     }
                 } catch (e: Throwable) {
+                    if (call.isCanceled()) {
+                        return
+                    }
                     sHandler.post {
                         callback.failed(e)
                     }
@@ -100,7 +113,26 @@ class OkhttpNetworkManager: INetManager {
                 }
 
             }
-
         })
+    }
+
+    // 中断下载和网络请求
+    /**
+     * 1. 取消正在排队等待网络请求的call（这里指 的是下载多任务）
+     * 2. 正在执行任务的call
+     */
+    override fun cancel(tag: Any) {
+        val queuedCalls = sOkHttpClient.dispatcher.queuedCalls() // 拿到网络请求排队的call
+        for (call in queuedCalls) {
+            if (tag == call.request().tag()) {
+                call.cancel()
+            }
+        }
+        val runningCalls = sOkHttpClient.dispatcher.runningCalls() // 拿到正在执行的call
+        for (call in runningCalls) {
+            if (tag == call.request().tag()) {
+                call.cancel()
+            }
+        }
     }
 }
