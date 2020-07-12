@@ -162,6 +162,7 @@ res下的xml文件夹下的fileproviderpath.xml文件:
     </external-files-path>
 </paths>
 ```
+权限的申请：    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
 具体的详细配置和解释请查阅Google官方文档
 
