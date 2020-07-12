@@ -9,6 +9,6 @@ interface INetManager {
     fun get(url: String, callback: INetCallback)
 
     // 下载文件apk
-    fun download(url: String, targetFile: File, callback: INetDownloadCallback)
+    fun download(url: String, targetFile: File?, callback: INetDownloadCallback)
 
 }
